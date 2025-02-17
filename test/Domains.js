@@ -15,6 +15,7 @@ describe("Domains contract", function () {
   }
 
   let domainsContract, owner, randomPerson;
+  const testImageURI = "ipfs://QmFakeHash"; // Dummy IPFS URL for tests
 
   beforeEach(async function () {
     ({ domainsContract, owner, randomPerson } = await loadFixture(
@@ -36,7 +37,9 @@ describe("Domains contract", function () {
 
       const price = await domainsContract.price("doom");
 
-      await domainsContract.connect(owner).register("doom", { value: price });
+      await domainsContract
+        .connect(owner)
+        .register("doom", testImageURI, { value: price });
 
       const domainRecords = await domainsContract.getRecord("doom");
       const domainOwner = domainRecords.wallet;
@@ -46,16 +49,18 @@ describe("Domains contract", function () {
 
     it("Should not allow registering an already registered domain", async function () {
       const price = await domainsContract.price("doom");
-      await domainsContract.register("doom", { value: price });
+      await domainsContract.register("doom", testImageURI, { value: price });
 
       await expect(
-        domainsContract.connect(randomPerson).register("doom", { value: price })
+        domainsContract
+          .connect(randomPerson)
+          .register("doom", testImageURI, { value: price })
       ).to.be.revertedWith("Domain already registered");
     });
 
     it("Wallet should not be empty", async function () {
       const price = await domainsContract.price("doom");
-      await domainsContract.register("doom", { value: price });
+      await domainsContract.register("doom", testImageURI, { value: price });
       const balance = await hre.ethers.provider.getBalance(
         domainsContract.target
       );
@@ -79,7 +84,7 @@ describe("Domains contract", function () {
 
     beforeEach(async function () {
       const price = await domainsContract.price("doom");
-      await domainsContract.register("doom", { value: price });
+      await domainsContract.register("doom", testImageURI, { value: price });
       newRecord.wallet = owner.address;
     });
 
@@ -119,7 +124,7 @@ describe("Domains contract", function () {
   describe("Owner Retrieval", function () {
     it("Should return the correct owner address for a registered domain", async function () {
       const price = await domainsContract.price("doom");
-      await domainsContract.register("doom", { value: price });
+      await domainsContract.register("doom", testImageURI, { value: price });
       const domainRecord = await domainsContract.getRecord("doom");
 
       expect(domainRecord.wallet).to.equal(owner.address);
