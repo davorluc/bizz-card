@@ -32,7 +32,7 @@ contract Domains is ERC721URIStorage {
 
     function price(string calldata name) public pure returns (uint) {
         uint len = StringUtils.strlen(name);
-        require(len > 0);
+        require(len > 0, "Domain name cannot be empty");
 
         if (len == 3) {
             return 0.05 ether;
@@ -112,4 +112,5 @@ contract Domains is ERC721URIStorage {
     function getRecord(string calldata name) public view returns (DomainRecord memory) {
         return records[name];
     }
+
 }
