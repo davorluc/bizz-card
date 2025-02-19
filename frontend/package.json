@@ -21,6 +21,8 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
-		"ethers": "^6.13.5"
+		"dotenv": "^16.4.7",
+		"ethers": "^6.13.5",
+		"pinata-web3": "^0.5.4"
 	}
 }
