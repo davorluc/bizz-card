@@ -19,7 +19,7 @@ contract Domains is ERC721URIStorage {
         string linkedin;
         string website;
         string avatar;
-        string tagline;
+        string variant;
     }
 
     mapping(string => address) public domains;
@@ -63,7 +63,7 @@ contract Domains is ERC721URIStorage {
             "", // linkedin
             "", // website
             "", // avatar
-            ""  // tagline
+            ""  // variant 
         );
 
         string memory json = Base64.encode(
@@ -79,7 +79,7 @@ contract Domains is ERC721URIStorage {
                     '"linkedin": "', records[name].linkedin, '", ',
                     '"website": "', records[name].website, '", ',
                     '"avatar": "', records[name].avatar, '", ',
-                    '"tagline": "', records[name].tagline, '"',
+                    '"variant": "', records[name].variant, '"',
                 '}'
             )
         );

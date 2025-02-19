@@ -110,7 +110,7 @@ describe("Domains contract", function () {
       linkedin: "linkedin.com/in/doom",
       website: "https://doom.com",
       avatar: "ipfs://QmAvatarHash",
-      tagline: "Rip and Tear!",
+      variant: "Rip and Tear!",
     };
 
     beforeEach(async function () {
@@ -130,7 +130,7 @@ describe("Domains contract", function () {
       expect(record.linkedin).to.equal(newRecord.linkedin);
       expect(record.website).to.equal(newRecord.website);
       expect(record.avatar).to.equal(newRecord.avatar);
-      expect(record.tagline).to.equal(newRecord.tagline);
+      expect(record.variant).to.equal(newRecord.variant);
     });
 
     it("Should prevent non-owners from setting a domain record", async function () {
@@ -144,7 +144,7 @@ describe("Domains contract", function () {
 
       expect(record.name).to.equal("");
       expect(record.email).to.equal("");
-      expect(record.tagline).to.equal("");
+      expect(record.variant).to.equal("");
       expect(record.twitter).to.equal("");
       expect(record.linkedin).to.equal("");
       expect(record.website).to.equal("");
