@@ -110,7 +110,12 @@ contract Domains is ERC721URIStorage {
     }
 
     function getRecord(string calldata name) public view returns (DomainRecord memory) {
+      if (domains[name] == address(0)) {
+        // Return an empty record if no domain is found
+        return DomainRecord("", "", address(0), "", "", "", "", "", "");
+      } else {
         return records[name];
+      }
     }
 
 }
