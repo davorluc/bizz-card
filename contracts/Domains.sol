@@ -10,6 +10,9 @@ contract Domains is ERC721URIStorage {
     uint256 private _tokenIds;
     string public tld;
 
+    enum Variant { NeoChrome, Obsidian, PlatinumPrism , CelestialVortex, MythicRelic }
+    mapping(Variant => uint256) public upgradeCost;
+
     struct DomainRecord {
         uint256 tokenId;
         string name;
@@ -20,7 +23,8 @@ contract Domains is ERC721URIStorage {
         string linkedin;
         string website;
         string avatar;
-        string variant;
+        Variant variant;
+        uint256 expirationTime;
     }
 
     mapping(string => address) public domains;
@@ -28,6 +32,10 @@ contract Domains is ERC721URIStorage {
 
     constructor(string memory _tld) payable ERC721("Bizz Business Cards", "BIZ") {
         tld = _tld;
+        upgradeCost[Variant.Obsidian] = 0.1 ether;
+        upgradeCost[Variant.PlatinumPrism] = 0.2 ether;
+        upgradeCost[Variant.CelestialVortex] = 0.5 ether;
+        upgradeCost[Variant.MythicRelic] = 1.0 ether;
         console.log("%s name service deployed", _tld);
     }
 
@@ -50,6 +58,8 @@ contract Domains is ERC721URIStorage {
         uint _price = price(name);
         require(msg.value >= _price, "Not enough Ether paid");
 
+        uint256 oneYear = 365 days;
+
         string memory _ens = string(abi.encodePacked(name, ".", tld));
         
         _tokenIds++;
@@ -68,7 +78,8 @@ contract Domains is ERC721URIStorage {
             "", // linkedin
             "", // website
             "", // avatar
-            ""  // variant 
+            Variant.NeoChrome,  // variant 
+            block.timestamp + oneYear
         );
 
         string memory json = Base64.encode(
@@ -84,7 +95,7 @@ contract Domains is ERC721URIStorage {
                     '"linkedin": "', records[name].linkedin, '", ',
                     '"website": "', records[name].website, '", ',
                     '"avatar": "', records[name].avatar, '", ',
-                    '"variant": "', records[name].variant, '"',
+                    '"variant": "', Strings.toString(uint256(Variant.NeoChrome)), '"',
                 '}'
             )
         );
@@ -110,60 +121,65 @@ contract Domains is ERC721URIStorage {
       _;
     }
 
-    function setName(string calldata domain, string calldata name) public onlyDomainOwner(domain) {
+    modifier checkExpired(string calldata domain) {
+    require(records[domain].expirationTime > block.timestamp, "Domain expired");
+      _;
+    }
+
+    function setName(string calldata domain, string calldata name) public onlyDomainOwner(domain) checkExpired(domain) {
         records[domain].name= name;
 
         console.log("Record updated for domain: %s", domain);
     }
 
-    function setEmail(string calldata domain, string calldata email) public onlyDomainOwner(domain) {
+    function setEmail(string calldata domain, string calldata email) public onlyDomainOwner(domain) checkExpired(domain) {
         records[domain].email= email;
 
-        console.log("Record updated for domain: %s", domain);
+        console.log("Avatar updated for domain: %s", domain);
     }
 
-    function setTwitter(string calldata domain, string calldata twitter) public onlyDomainOwner(domain) {
+    function setTwitter(string calldata domain, string calldata twitter) public onlyDomainOwner(domain) checkExpired(domain) {
         records[domain].twitter= twitter;
 
-        console.log("Record updated for domain: %s", domain);
+        console.log("Avatar updated for domain: %s", domain);
     }
 
-    function setLinkedIn(string calldata domain, string calldata linkedin) public onlyDomainOwner(domain) {
+    function setLinkedIn(string calldata domain, string calldata linkedin) public onlyDomainOwner(domain) checkExpired(domain) {
         records[domain].linkedin= linkedin;
 
-        console.log("Record updated for domain: %s", domain);
+        console.log("Avatar updated for domain: %s", domain);
     }
 
-    function setWebsite(string calldata domain, string calldata website) public onlyDomainOwner(domain) {
+    function setWebsite(string calldata domain, string calldata website) public onlyDomainOwner(domain) checkExpired(domain) {
         records[domain].website= website;
 
-        console.log("Record updated for domain: %s", domain);
+        console.log("Avatar updated for domain: %s", domain);
     }
 
-    function setAvatar(string calldata domain, string calldata avatar) public onlyDomainOwner(domain) {
+    function setAvatar(string calldata domain, string calldata avatar) public onlyDomainOwner(domain) checkExpired(domain) {
         records[domain].avatar= avatar;
 
-        console.log("Record updated for domain: %s", domain);
+        console.log("Avatar updated for domain: %s", domain);
     }
 
-    function setVariant(string calldata domain, string calldata variant) public onlyDomainOwner(domain) {
-        require(domains[domain] == msg.sender, "Not domain owner");
-        
-        records[domain].variant= variant;
+    function setVariant(string calldata domain, Variant newVariant) public onlyDomainOwner(domain) checkExpired(domain) payable {
+        uint256 cost = upgradeCost[newVariant];
+        require(msg.value >= cost, "Not enough Ether sent");
+        records[domain].variant= newVariant;
 
-        console.log("Record updated for domain: %s", domain);
+        console.log("Variant updated for domain: %s", domain);
     }
 
     function getRecord(string calldata name) public view returns (DomainRecord memory) {
       if (domains[name] == address(0)) {
         // Return an empty record if no domain is found
-        return DomainRecord(0, "", "", address(0), "", "", "", "", "", "");
+        return DomainRecord(0, "", "", address(0), "", "", "", "", "", Variant.NeoChrome, 0);
       } else {
         return records[name];
       }
     }
 
-    function updateMetadata(string calldata domain) public onlyDomainOwner(domain) {
+    function updateMetadata(string calldata domain) public onlyDomainOwner(domain) checkExpired(domain) {
       string memory imageURI = records[domain].avatar; // Example if you want to use avatar as the image.
    
       string memory json = Base64.encode(
@@ -192,4 +208,16 @@ contract Domains is ERC721URIStorage {
       console.log("Metadata updated for domain: %s", domain);
     }
 
+function renew(string calldata domain) public payable onlyDomainOwner(domain) {
+    require(records[domain].expirationTime <= block.timestamp, "Domain still valid");
+
+    uint256 renewalFee = price(domain);
+    require(msg.value >= renewalFee, "Insufficient payment");
+
+    // Extend the expiration time by another yeae
+    uint256 oneYear = 365 days;
+    records[domain].expirationTime = block.timestamp + oneYear;
+
+    console.log("Domain %s renewed for one more year", domain);
+}
 }
