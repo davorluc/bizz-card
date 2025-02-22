@@ -218,6 +218,7 @@
     {:else}
       <div class="form-container">
         <input type="text" placeholder="domain" bind:value={domain} />
+        .bizz
 
         {#if hasDomain}
           <input type="email" placeholder="Email" bind:value={email} />
