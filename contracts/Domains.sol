@@ -11,6 +11,7 @@ contract Domains is ERC721URIStorage {
     string public tld;
 
     struct DomainRecord {
+        uint256 tokenId;
         string name;
         string ens;
         address wallet;
@@ -50,13 +51,17 @@ contract Domains is ERC721URIStorage {
         require(msg.value >= _price, "Not enough Ether paid");
 
         string memory _ens = string(abi.encodePacked(name, ".", tld));
+        
+        _tokenIds++;
+
         uint256 newRecordId = _tokenIds;
 
         console.log("Registering %s.%s on the contract with tokenID %d", name, tld, newRecordId);
 
         records[name] = DomainRecord(
+            newRecordId,
             "", // FirstName LastName
-            _ens, // ENS
+            _ens,
             msg.sender, 
             "", // email
             "", // twitter
@@ -69,8 +74,8 @@ contract Domains is ERC721URIStorage {
         string memory json = Base64.encode(
             abi.encodePacked(
                 '{',
-                    '"name": "', _ens, '", ',
-                    '"description": "A domain on the Bizz Name Service", ',
+                    '"name": "', records[name].name, '", ',
+                    '"ens": "', records[name].ens, '", ',
                     '"image": "', imageURI, '", ',
                     '"length": "', Strings.toString(StringUtils.strlen(name)), '", ',
                     '"owner": "', Strings.toHexString(uint256(uint160(msg.sender)), 20), '", ',
@@ -91,7 +96,6 @@ contract Domains is ERC721URIStorage {
         
         domains[name] = msg.sender;
 
-        _tokenIds++;
 
         console.log("Registering domain %s to address %s", name, msg.sender);
     }
@@ -101,21 +105,91 @@ contract Domains is ERC721URIStorage {
         return records[name].wallet;
     }
 
-    function setRecord(string calldata name, DomainRecord calldata record) public {
-        require(domains[name] == msg.sender, "Not domain owner");
-        
-        records[name] = record;
+    modifier onlyDomainOwner(string calldata domain) {
+      require(domains[domain] == msg.sender, "Not domain owner");
+      _;
+    }
 
-        console.log("Record updated for domain: %s", name);
+    function setName(string calldata domain, string calldata name) public onlyDomainOwner(domain) {
+        records[domain].name= name;
+
+        console.log("Record updated for domain: %s", domain);
+    }
+
+    function setEmail(string calldata domain, string calldata email) public onlyDomainOwner(domain) {
+        records[domain].email= email;
+
+        console.log("Record updated for domain: %s", domain);
+    }
+
+    function setTwitter(string calldata domain, string calldata twitter) public onlyDomainOwner(domain) {
+        records[domain].twitter= twitter;
+
+        console.log("Record updated for domain: %s", domain);
+    }
+
+    function setLinkedIn(string calldata domain, string calldata linkedin) public onlyDomainOwner(domain) {
+        records[domain].linkedin= linkedin;
+
+        console.log("Record updated for domain: %s", domain);
+    }
+
+    function setWebsite(string calldata domain, string calldata website) public onlyDomainOwner(domain) {
+        records[domain].website= website;
+
+        console.log("Record updated for domain: %s", domain);
+    }
+
+    function setAvatar(string calldata domain, string calldata avatar) public onlyDomainOwner(domain) {
+        records[domain].avatar= avatar;
+
+        console.log("Record updated for domain: %s", domain);
+    }
+
+    function setVariant(string calldata domain, string calldata variant) public onlyDomainOwner(domain) {
+        require(domains[domain] == msg.sender, "Not domain owner");
+        
+        records[domain].variant= variant;
+
+        console.log("Record updated for domain: %s", domain);
     }
 
     function getRecord(string calldata name) public view returns (DomainRecord memory) {
       if (domains[name] == address(0)) {
         // Return an empty record if no domain is found
-        return DomainRecord("", "", address(0), "", "", "", "", "", "");
+        return DomainRecord(0, "", "", address(0), "", "", "", "", "", "");
       } else {
         return records[name];
       }
+    }
+
+    function updateMetadata(string calldata domain) public onlyDomainOwner(domain) {
+      string memory imageURI = records[domain].avatar; // Example if you want to use avatar as the image.
+   
+      string memory json = Base64.encode(
+          abi.encodePacked(
+              '{',
+                  '"name": "', records[domain].name, '", ',
+                  '"ens": "', records[domain].ens, '", ',
+                  '"image": "', imageURI, '", ',
+                  '"length": "', Strings.toString(StringUtils.strlen(domain)), '", ',
+                  '"owner": "', Strings.toHexString(uint256(uint160(msg.sender)), 20), '", ',
+                  '"email": "', records[domain].email, '", ',
+                  '"twitter": "', records[domain].twitter, '", ',
+                  '"linkedin": "', records[domain].linkedin, '", ',
+                  '"website": "', records[domain].website, '", ',
+                  '"avatar": "', records[domain].avatar, '", ',
+                  '"variant": "', records[domain].variant, '"',
+              '}'
+          )
+      );
+   
+      string memory finalTokenUri = string(abi.encodePacked("data:application/json;base64,", json));
+   
+      uint256 tokenId = records[domain].tokenId;
+      _setTokenURI(tokenId, finalTokenUri);
+   
+      console.log("Metadata updated for domain: %s", domain);
     }
 
 }

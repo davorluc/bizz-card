@@ -101,41 +101,29 @@ describe("Domains contract", function () {
   });
 
   describe("Domain Records", function () {
-    const newRecord = {
-      name: "Doom Slayer",
-      ens: "doom.bizz",
-      wallet: null, // Will be set dynamically
-      email: "doom@web3.com",
-      twitter: "@doomslayer",
-      linkedin: "linkedin.com/in/doom",
-      website: "https://doom.com",
-      avatar: "ipfs://QmAvatarHash",
-      variant: "Rip and Tear!",
-    };
-
     beforeEach(async function () {
       const price = await domainsContract.price("doom");
       await domainsContract.register("doom", testImageURI, { value: price });
-      newRecord.wallet = owner.address;
     });
 
     it("Should allow the owner to set a domain record", async function () {
-      await domainsContract.setRecord("doom", newRecord);
+      await domainsContract.setEmail("doom", "d.lucic4@hotmail.com");
       const record = await domainsContract.getRecord("doom");
 
-      expect(record.name).to.equal(newRecord.name);
-      expect(record.ens).to.equal(newRecord.ens);
-      expect(record.email).to.equal(newRecord.email);
-      expect(record.twitter).to.equal(newRecord.twitter);
-      expect(record.linkedin).to.equal(newRecord.linkedin);
-      expect(record.website).to.equal(newRecord.website);
-      expect(record.avatar).to.equal(newRecord.avatar);
-      expect(record.variant).to.equal(newRecord.variant);
+      expect(record.name).to.equal("");
+      expect(record.email).to.equal("d.lucic4@hotmail.com");
+      expect(record.twitter).to.equal("");
+      expect(record.linkedin).to.equal("");
+      expect(record.website).to.equal("");
+      expect(record.avatar).to.equal("");
+      expect(record.variant).to.equal("");
     });
 
     it("Should prevent non-owners from setting a domain record", async function () {
       await expect(
-        domainsContract.connect(randomPerson).setRecord("doom", newRecord)
+        domainsContract
+          .connect(randomPerson)
+          .setEmail("doom", "spongebob@krustykrab.com")
       ).to.be.revertedWith("Not domain owner");
     });
 
@@ -152,37 +140,30 @@ describe("Domains contract", function () {
     });
 
     it("Should allow partial updates to the domain record", async function () {
-      const partialRecord = {
-        ...newRecord,
-        email: "newdoom@web3.com", // Change only the email
-      };
-      await domainsContract.setRecord("doom", partialRecord);
+      await domainsContract.setEmail("doom", "spongebob@krustykrab.com");
+      await domainsContract.setTwitter("doom", "x.com/spongebob");
+      await domainsContract.setLinkedIn("doom", "linkedin link");
+      await domainsContract.setName("doom", "Spongebob Squarepants");
       const record = await domainsContract.getRecord("doom");
 
-      expect(record.email).to.equal(partialRecord.email);
-      expect(record.twitter).to.equal(newRecord.twitter); // other fields should stay the same
-      expect(record.linkedin).to.equal(newRecord.linkedin); // other fields should stay the same
-      expect(record.name).to.equal(newRecord.name); // other fields should stay the same
+      expect(record.email).to.equal("spongebob@krustykrab.com");
+      expect(record.twitter).to.equal("x.com/spongebob"); // other fields should stay the same
+      expect(record.linkedin).to.equal("linkedin link"); // other fields should stay the same
+      expect(record.name).to.equal("Spongebob Squarepants"); // other fields should stay the same
     });
 
     it("Should fail when trying to set a record for an unregistered domain", async function () {
-      const newRecordForNonExistentDomain = {
-        ...newRecord,
-        name: "Non Existent",
-      };
-
       await expect(
         domainsContract
           .connect(owner)
-          .setRecord("nonexistent", newRecordForNonExistentDomain)
+          .setEmail("nonexistent", "spongebob@krustykrab.com")
       ).to.be.revertedWith("Not domain owner"); // Will return this message, since smart contract checks if sender is domain owner before checking anything else, and since domain doesn't exist, no one is the owner technically
     });
 
     it("Should allow the avatar to be updated", async function () {
       const updatedAvatar = "ipfs://QmNewAvatarHash";
-      const updatedRecord = { ...newRecord, avatar: updatedAvatar };
 
-      await domainsContract.setRecord("doom", updatedRecord);
+      await domainsContract.setAvatar("doom", updatedAvatar);
 
       const record = await domainsContract.getRecord("doom");
       expect(record.avatar).to.equal(updatedAvatar);
