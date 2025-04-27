@@ -29,6 +29,7 @@ contract Domains is ERC721URIStorage {
 
     mapping(string => address) public domains;
     mapping(string => DomainRecord) public records;
+    string[] public registeredDomains; // Stores registered domain names
 
     constructor(string memory _tld) payable ERC721("Bizz Business Cards", "BIZ") {
         tld = _tld;
@@ -82,33 +83,13 @@ contract Domains is ERC721URIStorage {
             block.timestamp + oneYear
         );
 
-        string memory json = Base64.encode(
-            abi.encodePacked(
-                '{',
-                    '"name": "', records[name].name, '", ',
-                    '"ens": "', records[name].ens, '", ',
-                    '"image": "', imageURI, '", ',
-                    '"length": "', Strings.toString(StringUtils.strlen(name)), '", ',
-                    '"owner": "', Strings.toHexString(uint256(uint160(msg.sender)), 20), '", ',
-                    '"email": "', records[name].email, '", ',
-                    '"twitter": "', records[name].twitter, '", ',
-                    '"linkedin": "', records[name].linkedin, '", ',
-                    '"website": "', records[name].website, '", ',
-                    '"avatar": "', records[name].avatar, '", ',
-                    '"variant": "', Strings.toString(uint256(Variant.NeoChrome)), '"',
-                '}'
-            )
-        );
-
-        string memory finalTokenUri = string(abi.encodePacked("data:application/json;base64,", json));
-
         _safeMint(msg.sender, newRecordId);
-        _setTokenURI(newRecordId, finalTokenUri);
+        _setTokenURI(newRecordId, imageURI);
         
         domains[name] = msg.sender;
+        registeredDomains.push(name);
 
-
-        console.log("Registering domain %s to address %s", name, msg.sender);
+        console.log("Registered domain %s to address %s", name, msg.sender);
     }
 
     function getAddress(string calldata name) public view returns (address) {
@@ -170,17 +151,43 @@ contract Domains is ERC721URIStorage {
         console.log("Variant updated for domain: %s", domain);
     }
 
-    function getRecord(string calldata name) public view returns (DomainRecord memory) {
-      if (domains[name] == address(0)) {
-        // Return an empty record if no domain is found
+    function getRecord(string calldata domain) public view returns (DomainRecord memory) {
+      if (domains[domain] == address(0)) {
         return DomainRecord(0, "", "", address(0), "", "", "", "", "", Variant.NeoChrome, 0);
       } else {
-        return records[name];
+        return records[domain];
       }
     }
 
+    function getDomainsByOwner(address owner) public view returns (string[] memory) {
+      uint256 count = 0;
+
+    // Count how many domains are owned by `owner`
+      for (uint256 i = 0; i < registeredDomains.length; i++) {
+        string memory domain = registeredDomains[i];
+        if (domains[domain] == owner) {
+            count++;
+        }
+      }
+
+    // Create an array of exact size
+      string[] memory ownedDomains = new string[](count);
+      uint256 index = 0;
+
+    // Populate the array
+      for (uint256 i = 0; i < registeredDomains.length; i++) {
+        string memory domain = registeredDomains[i];
+        if (domains[domain] == owner) {
+            ownedDomains[index] = domain;
+            index++;
+        }
+      }
+
+      return ownedDomains;
+    }
+
     function updateMetadata(string calldata domain) public onlyDomainOwner(domain) checkExpired(domain) {
-      string memory imageURI = records[domain].avatar; // Example if you want to use avatar as the image.
+      string memory imageURI = records[domain].avatar;
    
       string memory json = Base64.encode(
           abi.encodePacked(
@@ -208,16 +215,15 @@ contract Domains is ERC721URIStorage {
       console.log("Metadata updated for domain: %s", domain);
     }
 
-function renew(string calldata domain) public payable onlyDomainOwner(domain) {
+  function renew(string calldata domain) public payable onlyDomainOwner(domain) {
     require(records[domain].expirationTime <= block.timestamp, "Domain still valid");
 
     uint256 renewalFee = price(domain);
     require(msg.value >= renewalFee, "Insufficient payment");
 
-    // Extend the expiration time by another yeae
     uint256 oneYear = 365 days;
     records[domain].expirationTime = block.timestamp + oneYear;
 
     console.log("Domain %s renewed for one more year", domain);
-}
+  }
 }
