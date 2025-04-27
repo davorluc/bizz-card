@@ -1,13 +1,25 @@
-# Sample Hardhat Project
+# davorluc's 'Bizz Cards'
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+## Important notice: Project still in very early stages (WIP)!
 
-Try running some of the following tasks:
+## Testing instructions:
+
+To run a local ETH node:
 
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
 npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
+```
+
+To test and deploy the contract locally:
+
+```shell
+npx hardhat test
+```
+
+To look at the frontend:
+
+```shell
+cd frontend
+npm i
+npm run dev
 ```
