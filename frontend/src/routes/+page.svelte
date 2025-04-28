@@ -1,46 +1,24 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { ethers } from "ethers";
+  import { connectWallet, getCurrentAccount } from "$lib/wallet";
   import "../app.css";
 
   let currentAccount: string = "";
 
-  const connectWallet = async () => {
+  const handleConnect = async () => {
     try {
-      const { ethereum } = window as any;
-      if (!ethereum) {
-        alert("Please install MetaMask!");
-        return;
-      }
-
-      const accounts = await ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      currentAccount = accounts[0];
-    } catch (error) {
-      console.error("Error connecting to wallet:", error);
-    }
-  };
-
-  const checkIfWalletIsConnected = async () => {
-    try {
-      const { ethereum } = window as any;
-      if (!ethereum) {
-        console.log("MetaMask not installed.");
-        return;
-      }
-
-      const accounts = await ethereum.request({ method: "eth_accounts" });
-      if (accounts.length > 0) {
-        currentAccount = accounts[0];
-      }
+      currentAccount = await connectWallet();
     } catch (error) {
       console.error(error);
+      alert((error as Error).message);
     }
   };
 
-  onMount(() => {
-    checkIfWalletIsConnected();
+  onMount(async () => {
+    const account = await getCurrentAccount();
+    if (account) {
+      currentAccount = account;
+    }
   });
 </script>
 
@@ -73,19 +51,21 @@
             <div class="w-full space-y-3">
               <button
                 class="wallet-btn w-full py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-3"
-                on:click={connectWallet}
+                on:click={handleConnect}
               >
                 <i class="fab fa-ethereum"></i>
                 MetaMask
               </button>
               <button
                 class="wallet-btn w-full py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-3"
+                id="walletConnect-btn"
               >
                 <i class="fas fa-bolt"></i>
                 WalletConnect
               </button>
               <button
                 class="wallet-btn w-full py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-3"
+                id="coinbaseWallet-btn"
               >
                 <i class="fab fa-bitcoin"></i>
                 Coinbase Wallet
@@ -372,5 +352,10 @@
       rgba(255, 255, 255, 0.2),
       transparent
     );
+  }
+
+  #walletConnect-btn,
+  #coinbaseWallet-btn {
+    display: none;
   }
 </style>
